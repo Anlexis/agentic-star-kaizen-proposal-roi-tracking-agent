@@ -1,0 +1,35 @@
+# Runtime parameters — loaded by AgentRegistry, passed as Graph(config=...).
+# Separate from config/agent.yaml (the static manifest).
+#
+# A standalone entry point constructs the agent with no arguments, so
+# src/graph/graph.py reads this file itself and forwards the framework keys
+# below. Every key here is annotated with the code that actually reads it; a
+# declaration nothing reads is called out rather than left to look effective.
+
+# Read by the framework's AgentBaseGraph.route()/._validate_config().
+max_retry: 3
+
+# Declared for the platform. The framework validates the surrounding config
+# block but no code path in the installed SDK reads this key, so it does not
+# currently bound anything at runtime — it is kept because the platform owns
+# request deadlines and this is where it will look for them.
+timeout_s: 30
+
+llm:
+  # Read end-to-end: graph.py forwards it, DomainWorkflowGraph seeds it into the
+  # inner state, and GenerateProposalSectionsNode records it on its audit event.
+  # Section text is generated deterministically from templates in this version,
+  # so the prompt is carried as the documented wiring point for a future
+  # model-backed generator — it is never used to fake a model call.
+  system_prompt_template: "prompts/kaizen_proposal.j2"
+  # Forwarded alongside the prompt template and reserved for that same wiring
+  # point. No generator consumes them in this version.
+  temperature: 0.0
+  max_tokens: 4000
+
+security:
+  # Declarative marker only. The output gate in src/nodes/post_process_node.py
+  # runs unconditionally and reads nothing from here — a security gate that a
+  # configuration value could switch off would be the weaker design, so this
+  # key records the intent rather than controlling it.
+  s3_gate_enabled: true
